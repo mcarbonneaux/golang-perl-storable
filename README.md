@@ -78,20 +78,8 @@ $ pypls freeze --data '[123, "Хай!"]' -i cp1251 | pypls thaw -i cp1251
 # INSTALL
 
 ```sh
-$ pip install python-perl-storable
+$ go get github.com/darviarush/golang-perl-storable
 ```
-
-# REQUIREMENTS
-
-* data-printer
-* argparse
-
-# LICENSE
-
-Copyright (C) Yaroslav O. Kosmina.
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Python itself.
 
 # AUTHOR
 
@@ -101,5 +89,5 @@ Yaroslav O. Kosmina <darviarush@mail.ru>
 
 MIT License
 
-Copyright (c) 2020 Yaroslav O. Kosmina
+Copyright (c) 2022 Yaroslav O. Kosmina
 
