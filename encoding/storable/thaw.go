@@ -89,9 +89,8 @@ func read_magic(stream *StorableReader) () {
 }
 
 // // Сохраняет в aseen извлечённое из буфера значение и возвращает его.
-// func seen(stream *StorableReader, sv *interface{}) any {
-	// append(stream.aseen, sv)
-	// return sv
+// func seen(stream *StorableReader, sv *interface{}) {
+	// stream.aseen := append(stream.aseen, sv)
 // }
 
 func retrieve(stream *StorableReader) {
@@ -111,11 +110,11 @@ func retrieve_other(stream *StorableReader) {
 
 func retrieve_byte(stream *StorableReader) {
 	value := int8(readUInt8(stream) - 128)
+	//seen(stream, &value)
 	pointer := stream.path[len(stream.path)-1]
 	elem := pointer.Elem()
 	switch {
 	case elem.Kind() == reflect.Interface && elem.NumMethod() == 0:
-		//append(stream.aseen, sv)
 		elem.Set(reflect.ValueOf(value))
 	case elem.CanInt():
 		elem.SetInt(int64(value))
@@ -123,10 +122,10 @@ func retrieve_byte(stream *StorableReader) {
 		elem.SetUint(uint64(value))
 	case elem.CanFloat():
 		elem.SetFloat(float64(value))
-		
 	default:
 		stream.err = &StorableError{fmt.Sprintf("Байту соответствует %v", elem.Type()), stream.path}
 	}
+	
 }
 
 // func retrieve_object(stream *StorableReader) {
@@ -137,25 +136,76 @@ func retrieve_byte(stream *StorableReader) {
 	// return stream.aseen[tag]
 // }
 
-// func retrieve_integer(stream *StorableReader) {
-	// stream.pos += SIZE_OF_LONG
-	// return stream.seen(struct.unpack_from("<q", stream.storable, stream.pos - SIZE_OF_LONG)[0])
-// }
+func retrieve_integer(stream *StorableReader) {
+	var value int64
+	err := binary.Read(stream.storable, binary.LittleEndian, &value)
+	if err != nil {
+		stream.err = &StorableError{fmt.Sprintf("read int64: %v", err), stream.path}
+		return
+	}
+	//seen(stream, &value)
+	pointer := stream.path[len(stream.path)-1]
+	elem := pointer.Elem()
+	switch {
+	case elem.Kind() == reflect.Interface && elem.NumMethod() == 0:
+		elem.Set(reflect.ValueOf(value))
+	case elem.CanInt():
+		elem.SetInt(int64(value))
+	case elem.CanUint():
+		elem.SetUint(uint64(value))
+	case elem.CanFloat():
+		elem.SetFloat(float64(value))
+	default:
+		stream.err = &StorableError{fmt.Sprintf("Целому соответствует %v", elem.Type()), stream.path}
+	}
+}
 
-// func retrieve_double(stream *StorableReader) {
-	// stream.pos += SIZE_OF_LONG
-	// return stream.seen(struct.unpack_from("<d", stream.storable, stream.pos - SIZE_OF_LONG)[0])
-// }
+func retrieve_double(stream *StorableReader) {
+	var value float64
+	err := binary.Read(stream.storable, binary.LittleEndian, &value)
+	if err != nil {
+		stream.err = &StorableError{fmt.Sprintf("read float64: %v", err), stream.path}
+		return
+	}
+	//seen(stream, &value)
+	pointer := stream.path[len(stream.path)-1]
+	elem := pointer.Elem()
+	switch {
+	case elem.Kind() == reflect.Interface && elem.NumMethod() == 0:
+		elem.Set(reflect.ValueOf(value))
+	case elem.CanFloat():
+		elem.SetFloat(value)
+	default:
+		stream.err = &StorableError{fmt.Sprintf("Вещественному соответствует %v", elem.Type()), stream.path}
+	}
+}
 
-// func retrieve_scalar(stream *StorableReader) {
-	// size = readUInt8(stream)
-	// return stream.seen(get_lstring(stream, size))
-// }
+func get_string(stream *StorableReader, size int32) {
+	if(stream.err != nil) {return}
+	value := get_lstring(stream, size)
+	if(stream.err != nil) {return}
+	//seen(stream, &value)
+	pointer := stream.path[len(stream.path)-1]
+	elem := pointer.Elem()
+	switch {
+	case elem.Kind() == reflect.Interface && elem.NumMethod() == 0:
+		elem.Set(reflect.ValueOf(value))
+	case elem.Kind() == reflect.Slice && elem.Type().Elem().Kind() == reflect.Uint8:
+		elem.SetBytes(value)
+	case elem.Kind() == reflect.String:
+		elem.SetString(string(value))
+	default:
+		stream.err = &StorableError{fmt.Sprintf("Скаляру соответствует %v", elem.Type()), stream.path}
+	}
+}
 
-// func retrieve_lscalar(stream *StorableReader) {
-	// size = stream.readInt32LE()
-	// return stream.seen(get_lstring(stream, size))
-// }
+func retrieve_scalar(stream *StorableReader) {
+	get_string(stream, int32(readUInt8(stream)))
+}
+
+func retrieve_lscalar(stream *StorableReader) {
+	get_string(stream, readInt32LE(stream))
+}
 
 // func retrieve_utf8str(stream *StorableReader) {
 	// size = readUInt8(stream)
@@ -163,12 +213,12 @@ func retrieve_byte(stream *StorableReader) {
 // }
 
 // func retrieve_lutf8str(stream *StorableReader) {
-	// size = stream.readInt32LE()
+	// size = readInt32LE(stream)()
 	// return stream.seen(stream.read(size).decode('utf8'))
 // }
 
 // func retrieve_array(stream *StorableReader) {
-	// size = stream.readInt32LE()
+	// size = readInt32LE(stream)()
 	// array = stream.seen([])
 	// for i in range(0, size):
 		// array.append(stream.retrieve())
@@ -185,11 +235,11 @@ func retrieve_byte(stream *StorableReader) {
 // }
 
 // func retrieve_hash(stream *StorableReader) {
-	// length = stream.readInt32LE()
+	// length = readInt32LE(stream)()
 	// hash = stream.seen({})
 	// for i in range(0, length):
 		// value = stream.retrieve()
-		// size = stream.readInt32LE()
+		// size = readInt32LE(stream)()
 		// key = get_lstring(stream, size)
 		// hash[key] = value
 
@@ -198,7 +248,7 @@ func retrieve_byte(stream *StorableReader) {
 
 // func retrieve_flag_hash(stream *StorableReader) {
 	// hash_flags = readUInt8(stream)
-	// length = stream.readInt32LE()
+	// length = readInt32LE(stream)()
 	// hash = stream.seen({})
 
 	// for i in range(0, length):
@@ -213,7 +263,7 @@ func retrieve_byte(stream *StorableReader) {
 			// """
 			// key = stream.retrieve()
 		// else:
-			// size = stream.readInt32LE()
+			// size = readInt32LE(stream)()
 			// key = get_lstring(stream, size, flags & (SHV_K_UTF8 | SHV_K_WASUTF8))
 
 		// hash[key] = value
@@ -271,7 +321,7 @@ func retrieve_byte(stream *StorableReader) {
 	// length = readUInt8(stream)
 
 	// if length & 0x80:
-		// length = stream.readInt32LE()
+		// length = readInt32LE(stream)()
 
 	// classname = get_lstring(stream, length)
 	// stream.aclass.append(classname)
@@ -304,11 +354,15 @@ func readUInt8(stream *StorableReader) byte {
 	return result
 }
 
-// func readInt32LE(stream *StorableReader) int32 {
-	//err := binary.Read(buf, binary.BigEndian, &myInt)
-	// stream.pos += SIZE_OF_INT
-	// return struct.unpack_from("<i", stream.storable, stream.pos - SIZE_OF_INT)[0]
-// }
+func readInt32LE(stream *StorableReader) int32 {
+	var result int32
+	err := binary.Read(stream.storable, binary.LittleEndian, &result)
+	if err != nil {
+		stream.err = &StorableError{fmt.Sprintf("readInt32LE: %v", err), stream.path}
+		return 0
+	}
+	return result
+}
 
 // func readInt32BE(stream *StorableReader) int32 {
 	// stream.pos += SIZE_OF_INT
@@ -339,19 +393,16 @@ func read(stream *StorableReader, length uint32) []byte {
 	return result
 }
 
-// func get_lstring(stream *StorableReader, length uint32, in_utf8=False) {
-	// if length == 0:
-		// return ''
-	// s = stream.read(length)
+func get_lstring(stream *StorableReader, length int32) []byte {
+	if length == 0 {
+		return []byte("")
+	}
+	s := read(stream, uint32(length))
 
-	// if in_utf8:
-		// return s.decode('utf8')
-	// if is_ascii(s):
-		// return s.decode('ascii')
 	// if stream.iconv:
 		// return stream.iconv(s)
-	// return s
-// }
+	return s
+}
 
 func end(stream *StorableReader) {
 	buf := make([]byte, 1)
@@ -367,16 +418,16 @@ func end(stream *StorableReader) {
 
 var RETRIVE_METHOD = []func(*StorableReader)() {
 retrieve_other, // retrieve_object,  // /* SX_OBJECT -- entry unused dynamically */
-retrieve_other, // retrieve_lscalar,  // /* SX_LSCALAR */
+	retrieve_lscalar,  // /* SX_LSCALAR */
 retrieve_other, // retrieve_array,  // /* SX_ARRAY */
 retrieve_other, // retrieve_hash,  // /* SX_HASH */
 retrieve_other, // retrieve_ref,  // /* SX_REF */
 retrieve_other, // retrieve_undef,  // /* SX_UNDEF */
-retrieve_other, // retrieve_integer,  // /* SX_INTEGER */
-retrieve_other, // retrieve_double,  // /* SX_DOUBLE */
+	retrieve_integer,  // /* SX_INTEGER */
+	retrieve_double,  // /* SX_DOUBLE */
     retrieve_byte,  // /* SX_BYTE */
 retrieve_other, // retrieve_netint,  // /* SX_NETINT */
-retrieve_other, // retrieve_scalar,  // /* SX_SCALAR */
+	retrieve_scalar,  // /* SX_SCALAR */
 retrieve_other, // retrieve_tied_array,  // /* SX_TIED_ARRAY */
 retrieve_other, // retrieve_tied_hash,  // /* SX_TIED_HASH */
 retrieve_other, // retrieve_tied_scalar,  // /* SX_TIED_SCALAR */
