@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
+	"strings"
 	"testing"
 )
 
@@ -106,5 +107,29 @@ func TestLScalar(t *testing.T) {
 		t.Errorf("Unmarshal error: %s", err.Error())
 	} else if !bytes.Equal(data, bytes.Repeat([]byte{'a'}, 1000)) {
 		t.Errorf("Expected: `a` repeated 1000 times, got: %q", data)
+	}
+}
+
+func TestLUtf8AsAny(t *testing.T) {
+	var data any
+	storable := freeze_perl(`do { use utf8; "И" x 1000 }`)
+	
+	err := Unmarshal(storable, &data)
+	if err != nil {
+		t.Errorf("Unmarshal error: %s", err.Error())
+	} else if data.(string) != string(strings.Repeat("И", 1000)) {
+		t.Errorf("Expected: `И` repeated 1000 times, got: %q", data)
+	}
+}
+
+func TestUtf8AsString(t *testing.T) {
+	var data string
+	storable := freeze_perl(`do { use utf8; "Гоуланг" }`)
+	
+	err := Unmarshal(storable, &data)
+	if err != nil {
+		t.Errorf("Unmarshal error: %s", err.Error())
+	} else if data != "Гоуланг" {
+		t.Errorf("Expected: `Гоуланг`, got: %q", data)
 	}
 }

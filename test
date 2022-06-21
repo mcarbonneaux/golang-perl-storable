@@ -1,0 +1,19 @@
+#!/bin/bash
+
+run() {
+	echo $*
+	"$@"
+}
+
+go test -coverprofile=coverage.out ./encoding/storable/...
+[ "$1" != "" ] && go tool cover -html=coverage.out
+exit
+
+s="`go test ./encoding/storable/...`"
+status=$?
+echo -n $s
+
+if [ $status != 0 ]; then
+	x="`perl -e '$ARGV[0] =~ /^.*?\.go:\d+:\d+:/m and print $& or warn "no match error"' "$s"`"
+	run '/home/dart/.wine/drive_c/Program Files/Notepad++/notepad++.exe' "$x"
+fi

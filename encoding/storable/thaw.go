@@ -180,7 +180,7 @@ func retrieve_double(stream *StorableReader) {
 	}
 }
 
-func get_string(stream *StorableReader, size int32) {
+func get_string(stream *StorableReader, size int32, is_utf8 bool) {
 	if(stream.err != nil) {return}
 	value := get_lstring(stream, size)
 	if(stream.err != nil) {return}
@@ -189,7 +189,11 @@ func get_string(stream *StorableReader, size int32) {
 	elem := pointer.Elem()
 	switch {
 	case elem.Kind() == reflect.Interface && elem.NumMethod() == 0:
-		elem.Set(reflect.ValueOf(value))
+		if is_utf8 {
+			elem.Set(reflect.ValueOf(string(value)))
+		} else {
+			elem.Set(reflect.ValueOf(value))
+		}
 	case elem.Kind() == reflect.Slice && elem.Type().Elem().Kind() == reflect.Uint8:
 		elem.SetBytes(value)
 	case elem.Kind() == reflect.String:
@@ -200,22 +204,20 @@ func get_string(stream *StorableReader, size int32) {
 }
 
 func retrieve_scalar(stream *StorableReader) {
-	get_string(stream, int32(readUInt8(stream)))
+	get_string(stream, int32(readUInt8(stream)), false)
 }
 
 func retrieve_lscalar(stream *StorableReader) {
-	get_string(stream, readInt32LE(stream))
+	get_string(stream, readInt32LE(stream), false)
 }
 
-// func retrieve_utf8str(stream *StorableReader) {
-	// size = readUInt8(stream)
-	// return stream.seen(stream.read(size).decode('utf8'))
-// }
+func retrieve_utf8str(stream *StorableReader) {
+	get_string(stream, int32(readUInt8(stream)), true)
+}
 
-// func retrieve_lutf8str(stream *StorableReader) {
-	// size = readInt32LE(stream)()
-	// return stream.seen(stream.read(size).decode('utf8'))
-// }
+func retrieve_lutf8str(stream *StorableReader) {
+	get_string(stream, readInt32LE(stream), true)
+}
 
 // func retrieve_array(stream *StorableReader) {
 	// size = readInt32LE(stream)()
@@ -440,8 +442,8 @@ retrieve_other, // retrieve_hook,  // /* SX_HOOK */
 retrieve_other, // retrieve_overloaded,  // /* SX_OVERLOAD */
 retrieve_other, // retrieve_tied_key,  // /* SX_TIED_KEY */
 retrieve_other, // retrieve_tied_idx,  // /* SX_TIED_IDX */
-retrieve_other, // retrieve_utf8str,  // /* SX_UTF8STR  */
-retrieve_other, // retrieve_lutf8str,  // /* SX_LUTF8STR */
+	retrieve_utf8str,  // /* SX_UTF8STR  */
+	retrieve_lutf8str,  // /* SX_LUTF8STR */
 retrieve_other, // retrieve_flag_hash,  // /* SX_FLAG_HASH */
 retrieve_other, // retrieve_code,  // /* SX_CODE */
 retrieve_other, // retrieve_weakref,  // /* SX_WEAKREF */
