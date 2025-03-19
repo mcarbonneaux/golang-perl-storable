@@ -58,19 +58,19 @@ Binary string with data in Perl Storable format
 # SCRIPT
 
 ```sh
-# Заморозить-раморозить:
+# Freeze-defrost:
 $ echo '[123, "Let it be!"]' | pypls freeze | pypls thaw
 
-# Передавать замороженные данные в бинарном виде:
+# Transfer frozen data in binary form:
 $ echo '[123, "Let it be!"]' | pypls freeze -b | pypls thaw -b
 
-# Передавать код в параметре:
+# Pass the code in the parameter:
 $ pypls freeze --data '[123, "Let it be!"]' | pypls thaw
 
-# Добавить магическое число и обесцветить замероженную строку:
+# Add a magic number and fade the frozen line:
 $ pypls freeze -m -s --data '[123, "Let it be!"]' | pypls thaw
 
-# Перекодировать строки (bytes останутся как есть):
+# Recode strings (bytes will remain as is):
 $ pypls freeze --data '[123, "Let it be!"]' -i cp1251 | pypls thaw -i cp1251
 
 ```
