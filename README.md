@@ -2,11 +2,11 @@
 
 # NAME
 
-golang-perl-storable — Паковщик/распаковщик из/в бинарного формата perl-storable.
+golang-perl-storable — Packer/unpacker from/to perl-storable binary format.
 
 # VERSION
 
-0.0.0-prealpha — на данный момент готово только считывание байт формата.
+0.0.0-prealpha — at the moment only reading of format bytes is ready.
 
 # DESCRIPTION
 
@@ -28,11 +28,11 @@ anydata.(int)
 
 # SYNOPSIS
 
-В языке perl есть свой формат бинарных данных для упаковки любых структур: хешей, списков, объектов, регулярок, скаляров, файловых дескрипторов, ссылок, глобов и т.п. Он реализуется модулем https://metacpan.org/pod/Storable.
+The perl language has its own binary data format for packing any structures: hashes, lists, objects, regular expressions, scalars, file descriptors, links, globs, etc. It is implemented by the module https://metacpan.org/pod/Storable.
 
-Данный формат довольно популярен и запакованные в бинарную строку данные различных проектов на perl хранятся во внешних хранилищах: mysql, memcached, tarantool и т.д.
+This format is quite popular and data from various perl projects packed into a binary string is stored in external storage: mysql, memcached, tarantool, etc.
 
-Данный go-модуль предназначен для распаковки данных, полученных из таких хранилищ, в структуры `go` и для упаковки данных `go`, чтобы поместить их в хранилище.  
+This go module is designed to unpack data retrieved from such stores into `go` structures and to pack `go` data to put it into the store.  
 
 # FUNCTIONS
 
@@ -40,38 +40,38 @@ anydata.(int)
 
 ### ARGUMENTS
 
-- storable - бинарная строка
-- classes - словарь с классами. Необязательный параметр
-- iconv - функция для конвертации строк не в utf8. Необязательный параметр
+- storable - binary string
+- classes - dictionary with classes. Optional parameter
+- iconv - function for converting strings not in utf8. Optional parameter
 
 ## Marshal
 
 ### ARGUMENTS
 
-- data - данные питона: строка, число, словарь, список, объект и т.д.
-- magic - булево значение. Необязательно. Добавляет к выводу магическое число 'pst0'
+- data - python data: string, number, dictionary, list, object, etc.
+- magic - boolean value. Optional. Adds magic number 'pst0' to output
 
 ### RETURNS
 
-Бинарная строка с данными в формате Perl Storable
+Binary string with data in Perl Storable format
 
 # SCRIPT
 
 ```sh
 # Заморозить-раморозить:
-$ echo '[123, "Хай!"]' | pypls freeze | pypls thaw
+$ echo '[123, "Let it be!"]' | pypls freeze | pypls thaw
 
 # Передавать замороженные данные в бинарном виде:
-$ echo '[123, "Хай!"]' | pypls freeze -b | pypls thaw -b
+$ echo '[123, "Let it be!"]' | pypls freeze -b | pypls thaw -b
 
 # Передавать код в параметре:
-$ pypls freeze --data '[123, "Хай!"]' | pypls thaw
+$ pypls freeze --data '[123, "Let it be!"]' | pypls thaw
 
 # Добавить магическое число и обесцветить замероженную строку:
-$ pypls freeze -m -s --data '[123, "Хай!"]' | pypls thaw
+$ pypls freeze -m -s --data '[123, "Let it be!"]' | pypls thaw
 
 # Перекодировать строки (bytes останутся как есть):
-$ pypls freeze --data '[123, "Хай!"]' -i cp1251 | pypls thaw -i cp1251
+$ pypls freeze --data '[123, "Let it be!"]' -i cp1251 | pypls thaw -i cp1251
 
 ```
 

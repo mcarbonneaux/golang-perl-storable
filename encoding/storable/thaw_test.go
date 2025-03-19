@@ -8,29 +8,27 @@ import (
 	"testing"
 )
 
-
-// var RECURSION_ARRAY = [123, -1.23, nil, '123', '1' * 1000, [5], {'x': 6}, 'Привет!']
+// var RECURSION_ARRAY = [123, -1.23, nil, '123', '1' * 1000, [5], {'x': 6}, 'Hello!']
 // RECURSION_ARRAY = append(RECURSION_ARRAY, RECURSION_ARRAY)
-
 
 func freeze_perl(code string) []byte {
 	code = fmt.Sprintf("$x = %s; print Storable::freeze(ref $x? $x: \\$x)", code)
 	cmd := exec.Command("perl", "-MStorable", "-e", code)
-    stdout, err := cmd.Output()
+	stdout, err := cmd.Output()
 
-    if err != nil {
-        panic(err.Error())
-    }
-	
+	if err != nil {
+		panic(err.Error())
+	}
+
 	return stdout
 }
 
 func TestByte(t *testing.T) {
 	var data uint8
 	storable := freeze_perl("123")
-	
+
 	err := Unmarshal(storable, &data)
-	
+
 	if err != nil {
 		t.Errorf("Unmarshal error: %s", err.Error())
 	} else if data != 123 {
@@ -41,7 +39,7 @@ func TestByte(t *testing.T) {
 func TestByteInterface(t *testing.T) {
 	var data any
 	storable := freeze_perl("123")
-	
+
 	err := Unmarshal(storable, &data)
 	if err != nil {
 		t.Errorf("Unmarshal error: %s", err.Error())
@@ -53,7 +51,7 @@ func TestByteInterface(t *testing.T) {
 func TestInteger(t *testing.T) {
 	var data int64
 	storable := freeze_perl("1000")
-	
+
 	err := Unmarshal(storable, &data)
 	if err != nil {
 		t.Errorf("Unmarshal error: %s", err.Error())
@@ -65,7 +63,7 @@ func TestInteger(t *testing.T) {
 func TestDouble(t *testing.T) {
 	var data float32
 	storable := freeze_perl("-2.5")
-	
+
 	err := Unmarshal(storable, &data)
 	if err != nil {
 		t.Errorf("Unmarshal error: %s", err.Error())
@@ -77,7 +75,7 @@ func TestDouble(t *testing.T) {
 func TestScalarAsBytes(t *testing.T) {
 	var data []byte
 	storable := freeze_perl(`"abc"`)
-	
+
 	err := Unmarshal(storable, &data)
 	if err != nil {
 		t.Errorf("Unmarshal error: %s", err.Error())
@@ -89,7 +87,7 @@ func TestScalarAsBytes(t *testing.T) {
 func TestScalarAsString(t *testing.T) {
 	var data string
 	storable := freeze_perl(`"abc"`)
-	
+
 	err := Unmarshal(storable, &data)
 	if err != nil {
 		t.Errorf("Unmarshal error: %s", err.Error())
@@ -101,7 +99,7 @@ func TestScalarAsString(t *testing.T) {
 func TestLScalar(t *testing.T) {
 	var data []byte
 	storable := freeze_perl(`"a" x 1000`)
-	
+
 	err := Unmarshal(storable, &data)
 	if err != nil {
 		t.Errorf("Unmarshal error: %s", err.Error())
@@ -112,24 +110,24 @@ func TestLScalar(t *testing.T) {
 
 func TestLUtf8AsAny(t *testing.T) {
 	var data any
-	storable := freeze_perl(`do { use utf8; "И" x 1000 }`)
-	
+	storable := freeze_perl(`do { use utf8; "AND" x 1000 }`)
+
 	err := Unmarshal(storable, &data)
 	if err != nil {
 		t.Errorf("Unmarshal error: %s", err.Error())
-	} else if data.(string) != string(strings.Repeat("И", 1000)) {
-		t.Errorf("Expected: `И` repeated 1000 times, got: %q", data)
+	} else if data.(string) != string(strings.Repeat("AND", 1000)) {
+		t.Errorf("Expected: `AND` repeated 1000 times, got: %q", data)
 	}
 }
 
 func TestUtf8AsString(t *testing.T) {
 	var data string
-	storable := freeze_perl(`do { use utf8; "Гоуланг" }`)
-	
+	storable := freeze_perl(`do { use utf8; "Golang" }`)
+
 	err := Unmarshal(storable, &data)
 	if err != nil {
 		t.Errorf("Unmarshal error: %s", err.Error())
-	} else if data != "Гоуланг" {
-		t.Errorf("Expected: `Гоуланг`, got: %q", data)
+	} else if data != "Golang" {
+		t.Errorf("Expected: `Golang`, got: %q", data)
 	}
 }
